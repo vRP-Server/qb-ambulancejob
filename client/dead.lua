@@ -133,7 +133,7 @@ CreateThread(function()
             EnableControlAction(0, 213, true)
 	        EnableControlAction(0, 249, true)
             EnableControlAction(0, 46, true)
-
+            StartDistressSignal()
             if isDead then
                 if not isInHospitalBed then 
                     if deathTime > 0 then
@@ -214,3 +214,45 @@ CreateThread(function()
         Wait(sleep)
 	end
 end)
+
+function StartDistressSignal()
+    SetTextFont(4)
+    SetTextScale(0.40, 0.40)
+    SetTextColour(185, 185, 185, 255)
+    SetTextDropshadow(0, 0, 0, 0, 255)
+    SetTextEdge(1, 0, 0, 0, 255)
+    SetTextDropShadow()
+    SetTextOutline()
+    BeginTextCommandDisplayText('STRING')
+    AddTextComponentSubstringPlayerName('Press [G] to send distress signal')
+    EndTextCommandDisplayText(0.442, 0.90)
+    if IsControlJustReleased(0, 47) then
+        QBCore.Functions.Progressbar("checking_in", "Sending Distress Signal.", 9000, false, false, {}, {}, {}, {}, function() -- Done
+            SendDistressSignal()
+        end)            
+    end
+end
+
+function EMSCall()
+    local pos = GetEntityCoords(GetPlayerPed(-1))
+
+    local s1, s2 = Citizen.InvokeNative(0x2EB41072B4C1E4C0, pos.x, pos.y, pos.z, Citizen.PointerValueInt(), Citizen.PointerValueInt())
+    local streetLabel = GetStreetNameFromHashKey(s1)
+    local street2 = GetStreetNameFromHashKey(s2)
+    if street2 ~= nil and street2 ~= "" then 
+        streetLabel = streetLabel .. " " .. street2
+    end
+    local gender = "Man"
+    if QBCore.Functions.GetPlayerData().charinfo.gender == 1 then
+        gender = "Woman"
+    end
+    local msg = "A Person Gender: " .. gender .." Injured at: " .. streetLabel
+    TriggerServerEvent("police:server:EMSCall", pos, msg, gender, streetLabel)
+end
+    
+function SendDistressSignal()
+    local playerPed = PlayerPedId()
+    local coords = GetEntityCoords(playerPed)
+    QBCore.Functions.Notify('Distress Signal Sent! Avialable Units may arrive soon.')
+    EMSCall()
+end
